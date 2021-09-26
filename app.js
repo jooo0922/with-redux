@@ -1,19 +1,21 @@
 "use strict";
 
 function reducer(state, action) {
-  console.log(state, action); // fire 버튼을 눌러서 콘솔이 찍힌 걸 보면 이전의 state값과 dispatch()를 호출하면서 전달한 action 객체가 보임
   if (state === undefined) {
     return { color: "yellow" };
   }
 
   let newState;
   if (action.type === "CHANGE_COLOR") {
-    newState = Object.assign({}, state, { color: "red" });
+    newState = Object.assign({}, state, { color: action.color });
   }
+  console.log(action.type, action, state, newState); // reducer 함수 내에서 app의 상태 변화를 확인하는 방법
   return newState;
 }
-const store = Redux.createStore(reducer); // 생성한 store를 애플리케이션 어디서든 실행할 수 있게 전역변수에 저장해놓음.
-console.log(store.getState()); // state 초기값이 잘 저장됐는지 보기 위해 getState()로 store에 저장된 state를 가져와 콘솔에 찍어봄.
+const store = Redux.createStore(
+  reducer,
+  window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__() // 얘는 Chrome에서 redux devTools extension을 사용하기 위해 추가한 코드!
+); // 생성한 store를 애플리케이션 어디서든 실행할 수 있게 전역변수에 저장해놓음.
 
 function red() {
   const state = store.getState(); // store에 저장된 state값을 가져올 때는 항상 store.getState()를 사용할 것!
@@ -26,7 +28,36 @@ function red() {
     </div>
   `;
 }
+store.subscribe(red);
 red();
+
+function blue() {
+  const state = store.getState(); // store에 저장된 state값을 가져올 때는 항상 store.getState()를 사용할 것!
+  document.querySelector("#blue").innerHTML = `
+    <div class="container" id="component_blue" style="background-color:${state.color}">
+      <h1>blue</h1>
+      <input type="button" value="fire" onclick="
+        store.dispatch({type:'CHANGE_COLOR', color:'blue'});
+      "/>
+    </div>
+  `;
+}
+store.subscribe(blue);
+blue();
+
+function green() {
+  const state = store.getState(); // store에 저장된 state값을 가져올 때는 항상 store.getState()를 사용할 것!
+  document.querySelector("#green").innerHTML = `
+    <div class="container" id="component_green" style="background-color:${state.color}">
+      <h1>green</h1>
+      <input type="button" value="fire" onclick="
+        store.dispatch({type:'CHANGE_COLOR', color:'green'});
+      "/>
+    </div>
+  `;
+}
+store.subscribe(green);
+green();
 
 /**
  * 1. Redux.createStore(reducer)
@@ -94,4 +125,43 @@ red();
  * 이처럼 state의 원본을 복사한 '복사본'을 수정 및 변경해서 리턴해주면
  * 위에서 말한 고급기능들도 정상적으로 사용 가능하고,
  * 애플리케이션이 예측 가능하게 동작할 수 있음 -> immutability
+ */
+
+/**
+ * store.subscribe(렌더 함수)
+ *
+ * dispatch에 의해 전달된 action 객체를 이용해서 reducer함수가 state의 값을 바꿀때마다
+ * 그 변화를 UI에 자동으로 반영하려면 어떻게 해야 할까?
+ *
+ * store.getState()를 이용해 state값을 가져와서 UI를 그려주는 render 함수를
+ * store.subscribe(render)에 등록해주면 됨.
+ *
+ * 이렇게 하면 state값에 변화가 생길 때마다 Redux에서 render 함수를 알아서 호출할 것이고,
+ * 그렇게 되면 DOM UI도 자동으로 다시 그려지게 됨!
+ */
+
+/**
+ * Decoupling
+ *
+ * 리덕스를 사용함으로써 얻을 수 있는 가장 중요한 효과는
+ * 부품들(함수들) 간의 의존성을 낮춤으로써, 부품 하나 추가하면 전체 함수들을 뜯어고칠 필요가 없게 됨.
+ *
+ * 즉, state값을 중앙집중화 시킴으로써,
+ * state가 바뀌면 나머지 부품들에 대해서도 알아서 변경이 되다보니,
+ * 부품을 새로 추가한다고 해서 다른 기존의 부품들의 코드를 일일이 수정해 줄 필요가 없다는 것!
+ *
+ * -> 이러한 효과를 '부품들 간의 의존성을 낮춘다' 라고 하며, 'Decoupling 한다' 라고도 표현함.
+ */
+
+/**
+ * Redux에서 application의 상태를 확인하는 가장 쉬운 방법
+ *
+ * Redux는 단 하나의 store만 유지함.
+ * 그리고 그 store는 reducer 함수를 통해서만 가공되기 때문에
+ * reducer 함수 내에서 각 요소들을 콘솔로 찍어보면 쉽게 알 수 있음.
+ *
+ * console.log(action.type, action, state, newState);
+ * 요런 식으로 reducer 함수 안에서 각각의 인자를 콘솔로 찍어보면
+ * 상태가 변화할 때마다 reducer가 실행되기 때문에
+ * 콘솔로 찍는 값들을 상태 변화에 따라 확인해볼 수 있음
  */
